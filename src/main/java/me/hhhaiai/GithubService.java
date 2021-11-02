@@ -28,28 +28,29 @@ public class GithubService {
         String owner = null, repo = null, dirName = null, pathName = null, fileName = null, token = null, contentNoBase64 = null, contentBase64 = null, commitMsg = null, auther = null, mail = null;
         for (int i = 0; i < lists.size(); i++) {
             try {
+
                 String key = lists.get(i);
-                if ("-o".equals(key) || "-u".equals(key)) {
+                if ("-owner".equals(key) || "-user".equals(key)) {
                     owner = lists.get(i + 1);
-                } else if ("-r".equals(key)) {
+                } else if ("-repo".equals(key)) {
                     repo = lists.get(i + 1);
-                } else if ("-s".equals(key)) {
+                } else if ("-target-dir-full-name".equals(key)) {
                     dirName = lists.get(i + 1);
-                } else if ("-p".equals(key)) {
+                } else if ("-target-name".equals(key)) {
                     pathName = lists.get(i + 1);
-                } else if ("-f".equals(key)) {
+                } else if ("-native-file".equals(key)) {
                     fileName = lists.get(i + 1);
-                } else if ("-t".equals(key)) {
+                } else if ("-token".equals(key)) {
                     token = lists.get(i + 1);
-                } else if ("-c".equals(key)) {
+                } else if ("-content-no-base64".equals(key)) {
                     contentNoBase64 = lists.get(i + 1);
-                } else if ("-b".equals(key)) {
+                } else if ("-content-with-base64".equals(key)) {
                     contentBase64 = lists.get(i + 1);
-                } else if ("-m".equals(key)) {
+                } else if ("-commit-messge".equals(key)) {
                     commitMsg = lists.get(i + 1);
-                } else if ("-a".equals(key)) {
+                } else if ("-commit-auther".equals(key)) {
                     auther = lists.get(i + 1);
-                } else if ("-l".equals(key)) {
+                } else if ("-commit-email".equals(key)) {
                     mail = lists.get(i + 1);
                 }
             } catch (Throwable e) {
@@ -57,33 +58,35 @@ public class GithubService {
             }
         }
         String path = "";
-
-        if (isEmpty(fileName)){
-            if (!isEmpty(dirName)) {
-                path = dirName + (isEmpty(pathName) ? "" : "/" + pathName);
-            } else {
-                path = pathName;
-            }
-        }else{
-            path = fileName;
+//        dirName/pathName 互斥，同时只可以有一个，用于目标名称和目录
+        if (isEmpty(dirName) && isEmpty(fileName)) {
+            System.err.println("upload path  is null! please check -target-name  or -target-dir-full-name");
+            return;
         }
+        //上传文件名优先级：全路径>单文件
+        if (isEmpty(dirName)) {
+            path = pathName;
+        } else {
+            path = dirName;
+        }
+
         path = "/" + path;
 
-        if (!isEmpty(contentNoBase64) || !isEmpty(contentBase64)) {
-            // 上传字符串,非文件
-            if (!isEmpty(contentNoBase64)) {
-//                createFile(boolean isNeedBase64, String owner, String repo, String path, String token, String uploadContent, String commitMsg, String username, String email) {
+        // 上传优先级: 文件 > 未base64字符串 > base64字符串
+        if (isEmpty(fileName)) {
+            if (isEmpty(contentNoBase64)) {
+                if (!isEmpty(contentBase64)) {
+                    GithubHelper.createFile(false, owner, repo, path, token, contentBase64, commitMsg, auther, mail);
+                } else {
+                    System.err.println("无有效上传字符串，上传失败，请检测后再试！");
+                    printHelp();
+                    return;
+                }
+            } else {
                 GithubHelper.createFile(true, owner, repo, path, token, contentNoBase64, commitMsg, auther, mail);
-
-            }
-            if (!isEmpty(contentBase64)) {
-                GithubHelper.createFile(false, owner, repo, path, token, contentBase64, commitMsg, auther, mail);
             }
         } else {
-            //上传文件非字符串
-            if (!isEmpty(fileName)) {
-                GithubHelper.createFile(false, owner, repo, path, token, FileUtils.getBase64FromFile(new File(fileName)), commitMsg, "", "");
-            }
+            GithubHelper.createFile(false, owner, repo, path, token, FileUtils.getBase64FromFile(new File(fileName)), commitMsg, auther, mail);
         }
 
     }
@@ -96,18 +99,21 @@ public class GithubService {
         StringBuilder sb = new StringBuilder();
         sb
                 .append("github 用法:").append("\r\n")
-                .append("\t").append("-o:").append("\t").append("github[用户]名字").append("\r\n")
-                .append("\t").append("-u:").append("\t").append("github[用户]名字").append("\r\n")
-                .append("\t").append("-r:").append("\t").append("github[项目]名称").append("\r\n")
-                .append("\t").append("-s:").append("\t").append("github[上传目录]名称").append("\r\n")
-                .append("\t").append("-p:").append("\t").append("github[目标文件]名称").append("\r\n")
-                .append("\t").append("-f:").append("\t").append("github即将上传的本地文件名").append("\r\n")
-                .append("\t").append("-t:").append("\t").append("github 个人 token").append("\r\n")
-                .append("\t").append("-c:").append("\t").append("github上传[未base64]内容").append("\r\n")
-                .append("\t").append("-b:").append("\t").append("github上传[已base64]内容").append("\r\n")
-                .append("\t").append("-m:").append("\t").append("github上传commit内容").append("\r\n")
-                .append("\t").append("-a:").append("\t").append("github上传使用的用户名字(auther)").append("\r\n")
-                .append("\t").append("-l:").append("\t").append("github上传使用的邮箱名称").append("\r\n")
+                .append("\t").append("-owner/-user:").append("\t").append("[用户]名字").append("\r\n")
+                .append("\t").append("-repo:").append("\t").append("[项目]名称").append("\r\n")
+                .append("\t").append("-target-name:").append("\t").append("上传[目标文件]名称").append("\r\n")
+                .append("\t\t").append("仅用于确定上传的全路径文件名字").append("\t").append("\r\n\r\n")
+                .append("\t").append("-target-dir-full-name:").append("\t").append("上传[上传全路径]名称").append("\r\n")
+                .append("\t\t").append("仅用于确定上传的全路径文件名字，支持上传到特定路径").append("\r\n\r\n")
+                .append("\t").append("-native-file:").append("\t").append("即将上传的全路径本地文件名").append("\r\n")
+                .append("\t").append("-token:").append("\t").append("github 个人 token").append("\r\n")
+                .append("\t").append("-content-no-base64:").append("\t").append("上传[未base64]内容").append("\r\n")
+                .append("\t\t").append("上传文件的内容,有优先级,如有<b>-native-file</b>,则不会使用该部分内容").append("\r\n\r\n")
+                .append("\t").append("-content-with-base64:").append("\t").append("上传[已base64]内容").append("\r\n")
+                .append("\t\t").append("上传文件的内容,有优先级,如有<b>-native-file</b>,则不会使用该部分内容，同时-content-no-base64的优先级也高于该项").append("\r\n\r\n")
+                .append("\t").append("-commit-messge:").append("\t").append("github上传commit内容").append("\r\n")
+                .append("\t").append("-commit-auther:").append("\t").append("上传使用的用户名字(auther),可空").append("\r\n")
+                .append("\t").append("-commit-email:").append("\t").append("上传使用的邮箱名称").append("\r\n")
         ;
         System.out.println(sb.toString());
     }

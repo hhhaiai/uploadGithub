@@ -1,12 +1,17 @@
 # uploadGithubService
 
 ## 未加密测试
+
 ``` shell
-java -jar target/uploadGithubService-1.0-jar-with-dependencies.jar  -o hhhaiai -r Git_result  -p n_test.txt  -t ${github_token}  -c "cax" -m "test text" -a "gittest" -l "sanbo.xyz@gmail.com"
+
+java -jar target/uploadGithubService-1.1-jar-with-dependencies.jar  -owner hhhaiai -repo Git_result -target-dir-full-name  test/nobase64.txt -content-no-base64 "测试字符串"  -token $GITHUB_TOKEN_90 -commit-messge  "测试未加密字符串"  -commit-auther "UploadGithubService" -commit-email "sanbo.xyz@gmail.com"
+
 ```
 
 ## 文件测试
 
 ``` shell
-java -jar target/uploadGithubService-1.0-jar-with-dependencies.jar  -o hhhaiai -r Git_result  -p test.txt  -t  ${github_token}  -f mvnw  -m "test file" -a "gittest" -l "sanbo.xyz@gmail.com"
+
+java -jar target/uploadGithubService-1.1-jar-with-dependencies.jar  -owner hhhaiai -repo Git_result -target-dir-full-name  test/useMavenWrapper.sh -native-file useMavenWrapper.sh  -token $GITHUB_TOKEN_90 -commit-messge  "test upload file"  -commit-auther "UploadGithubService" -commit-email "sanbo.xyz@gmail.com"
+
 ```

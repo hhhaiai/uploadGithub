@@ -10,3 +10,5 @@ java -jar target/uploadGithubService-1.0-jar-with-dependencies.jar  -o hhhaiai -
 ``` shell
 java -jar target/uploadGithubService-1.0-jar-with-dependencies.jar  -o hhhaiai -r Git_result  -p test.txt  -t  ${github_token}  -f mvnw  -m "test file" -a "gittest" -l "sanbo.xyz@gmail.com"
 ```
+
+
